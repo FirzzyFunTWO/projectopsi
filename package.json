@@ -5,6 +5,7 @@
     "tailwindcss": "^3.4.17"
   },
   "dependencies": {
+    "bmkg-wrapper": "^2.0.1",
     "chart.js": "^4.4.9"
   },
   "name": "projectopsi",

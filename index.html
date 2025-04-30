@@ -1,167 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>IoT Flood Monitoring Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <style>
-    .status-aman { background-color: #2d6a4f; }
-    .status-waspada { background-color: #fca311; }
-    .status-bahaya { background-color: #e63946; animation: blink 1s infinite; }
-    @keyframes blink {
-      0%, 100% { background-color: #e63946; }
-      50% { background-color: #ff6b6b; }
-    }
-  </style>
+  <link href="./css/style.css" rel="stylesheet">
 </head>
 <body class="bg-gray-900 text-white font-sans">
 
   <header class="text-center py-6 bg-gray-800 shadow-md">
-    <h1 class="text-3xl font-bold">IoT Flood Monitoring Dashboard 🌧️</h1>
+    <h1 class="text-3xl font-bold text-white">IoT Flood Monitoring Dashboard</h1>
   </header>
 
-  <!-- Top Info -->
-  <section class="grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
-    <div class="bg-gray-800 p-4 rounded-xl shadow">
+  <!-- Status Bar -->
+  <section class="p-4">
+    <div class="bg-gray-800 p-6 rounded-xl shadow">
+      <h2 class="text-xl font-semibold text-center">Status</h2>
+      <p id="status" class="text-3xl font-bold text-center">✅ AMAN</p>
+    </div>
+  </section>
+
+  <!-- Top Info Row -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-4">
+    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
       <h2 class="text-xl font-semibold mb-2">Ketinggian Air</h2>
-      <p id="ultrasonic" class="text-3xl font-bold text-blue-400">0 cm</p>
-      <p id="status" class="text-lg mt-2 font-bold p-2 rounded"></p>
+      <p id="ultrasonic" class="text-4xl font-bold text-blue-400">0 cm</p>
     </div>
-    <div class="bg-gray-800 p-4 rounded-xl shadow">
+    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
       <h2 class="text-xl font-semibold mb-2">Suhu</h2>
-      <p id="temperature" class="text-3xl font-bold text-red-400">0°C</p>
+      <p id="temperature" class="text-4xl font-bold text-red-400">0°C</p>
     </div>
-    <div class="bg-gray-800 p-4 rounded-xl shadow">
+    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
       <h2 class="text-xl font-semibold mb-2">Kelembapan</h2>
-      <p id="humidity" class="text-3xl font-bold text-green-400">0%</p>
+      <p id="humidity" class="text-4xl font-bold text-green-400">0%</p>
+    </div>
+    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
+      <h2 class="text-xl font-semibold mb-2">Kelembapan Tanah</h2>
+      <p id="soil" class="text-4xl font-bold text-yellow-400">0%</p>
     </div>
   </section>
 
   <!-- Chart -->
   <section class="p-4">
     <div class="bg-gray-800 p-6 rounded-xl shadow">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold">Debit Air (L/jam)</h2>
-        <select id="timeRange" class="bg-gray-700 text-white rounded p-2">
-          <option value="1">1 Jam</option>
-          <option value="6" selected>6 Jam</option>
-          <option value="12">12 Jam</option>
-        </select>
+      <h2 class="text-xl font-semibold text-center mb-4">Debit Air (L/jam)</h2>
+      <div class="relative" style="height:300px;">
+        <canvas id="flowChart" class="w-full h-full"></canvas>
       </div>
-      <canvas id="flowChart" class="w-full h-64"></canvas>
     </div>
   </section>
 
   <!-- Bottom Info -->
-  <section class="grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
-    <div class="bg-gray-800 p-4 rounded-xl shadow">
-      <h2 class="text-xl font-semibold mb-2">Kelembapan Tanah</h2>
-      <p id="soil" class="text-3xl font-bold text-yellow-400">0%</p>
-    </div>
-    <div class="bg-gray-800 p-4 rounded-xl shadow">
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
       <h2 class="text-xl font-semibold mb-2">Prediksi Cuaca</h2>
-      <div id="forecast" class="text-sm text-white space-y-1"></div>
+      <p id="forecast" class="text-lg">Cerah Berawan</p>
     </div>
-    <div class="bg-gray-800 p-4 rounded-xl shadow">
+    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
       <h2 class="text-xl font-semibold mb-2">Utilitas</h2>
       <ul class="list-disc list-inside text-sm text-gray-300">
-        <li>Pop-up Bahaya</li>
-        <li>Suara Alarm</li>
-        <li>Update Data Realtime</li>
+        <li>Battery:</li>
+        <li>Connection:</li>
+        <li>Volt:</li>
       </ul>
     </div>
   </section>
 
-  <!-- Alarm Sound -->
+  <!-- Alarm Audio -->
   <audio id="alarmAudio" src="./assets/alarm.mp3" preload="auto"></audio>
 
-  <script>
-    const ctx = document.getElementById('flowChart').getContext('2d');
-    let labels = [], data = [];
+  <!-- Danger Popup -->
+  <div id="dangerPopup" class="hidden fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div class="bg-red-500 p-8 rounded-xl text-center">
+      <h2 class="text-3xl text-white font-bold mb-4">🚨 BAHAYA! Ketinggian Air Tinggi!</h2>
+      <button onclick="closePopup()" class="text-lg text-white bg-red-600 p-2 rounded">Tutup</button>
+    </div>
+  </div>
 
-    for (let i = 0; i <= 60; i++) {
-      labels.push(`${i}m`);
-      data.push(Math.max(0, Math.min(100, Math.sin(i / 10) * 50 + 50)));
-    }
-
-    const chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Debit Air (L/jam)',
-          data,
-          borderColor: 'aqua',
-          borderWidth: 2,
-          fill: false,
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            suggestedMax: 120
-          }
-        }
-      }
-    });
-
-    function simulateData() {
-      const height = Math.floor(700 + Math.sin(Date.now() / 20000) * 400); // cm
-      const temp = (25 + Math.random() * 5).toFixed(1);
-      const hum = (60 + Math.random() * 20).toFixed(1);
-      const soil = (40 + Math.random() * 30).toFixed(1);
-      const flow = (30 + Math.random() * 30).toFixed(1);
-
-      document.getElementById('ultrasonic').innerText = `${height} cm`;
-      document.getElementById('temperature').innerText = `${temp}°C`;
-      document.getElementById('humidity').innerText = `${hum}%`;
-      document.getElementById('soil').innerText = `${soil}%`;
-
-      const statusEl = document.getElementById('status');
-      if (height > 1000) {
-        statusEl.textContent = "BAHAYA";
-        statusEl.className = "status-bahaya text-center";
-        document.getElementById('alarmAudio').play().catch(()=>{});
-        alert("⚠️ Status Bahaya: Ketinggian air melebihi 1000 cm!");
-      } else if (height >= 800) {
-        statusEl.textContent = "WASPADA";
-        statusEl.className = "status-waspada text-center";
-      } else {
-        statusEl.textContent = "AMAN";
-        statusEl.className = "status-aman text-center";
-      }
-
-      // update chart
-      chart.data.labels.push(`${chart.data.labels.length}m`);
-      chart.data.datasets[0].data.push(flow);
-      if (chart.data.labels.length > 60) {
-        chart.data.labels.shift();
-        chart.data.datasets[0].data.shift();
-      }
-      chart.update();
-    }
-
-    function loadForecast() {
-      const forecastEl = document.getElementById('forecast');
-      const dummy = [
-        { emoji: "☀️", day: "Senin", temp: 30, hum: 60 },
-        { emoji: "⛅", day: "Selasa", temp: 28, hum: 65 },
-        { emoji: "🌧️", day: "Rabu", temp: 26, hum: 70 },
-        { emoji: "⛈️", day: "Kamis", temp: 27, hum: 80 },
-        { emoji: "❄️", day: "Jumat", temp: 24, hum: 75 },
-      ];
-      forecastEl.innerHTML = dummy.map(item =>
-        `<div>${item.emoji} ${item.day} - ${item.temp}°C, ${item.hum}%</div>`
-      ).join("");
-    }
-
-    setInterval(simulateData, 3000);
-    loadForecast();
-  </script>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="./js/script.js"></script>
 
 </body>
 </html>

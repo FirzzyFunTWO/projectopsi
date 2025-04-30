@@ -1,83 +1,137 @@
-const ctx = document.getElementById('flowChart').getContext('2d');
-let labels = [], data = [];
+const ultrasonic = document.getElementById("ultrasonic");
+const temperature = document.getElementById("temperature");
+const humidity = document.getElementById("humidity");
+const soil = document.getElementById("soil");
+const status = document.getElementById("status");
+const forecast = document.getElementById("forecast");
+const forecast5 = document.getElementById("forecast-5days");
+const alarmAudio = document.getElementById("alarmAudio");
+const dangerPopup = document.getElementById("dangerPopup");
+const ctx = document.getElementById("flowChart").getContext("2d");
 
-for (let i = 0; i <= 60; i++) {
-  labels.push(`${i}m`);
-  data.push(Math.max(0, Math.min(100, Math.sin(i / 10) * 50 + 50)));
-}
-
-const chart = new Chart(ctx, {
+let flowChart = new Chart(ctx, {
   type: 'line',
   data: {
-    labels,
+    labels: [],
     datasets: [{
       label: 'Debit Air (L/jam)',
-      data,
-      borderColor: 'aqua',
-      borderWidth: 2,
-      fill: false,
+      data: [],
+      borderColor: 'rgba(59, 130, 246, 1)',
+      backgroundColor: 'rgba(59, 130, 246, 0.3)',
       tension: 0.3
     }]
   },
   options: {
     responsive: true,
-    scales: {
-      y: {
-        beginAtZero: true,
-        suggestedMax: 120
-      }
-    }
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true } }
   }
 });
 
-function simulateData() {
-  const height = Math.floor(700 + Math.sin(Date.now() / 20000) * 400); // cm
-  const temp = (25 + Math.random() * 5).toFixed(1);
-  const hum = (60 + Math.random() * 20).toFixed(1);
-  const soil = (40 + Math.random() * 30).toFixed(1);
-  const flow = (30 + Math.random() * 30).toFixed(1);
+// Variabel untuk ketinggian air
+let currentHeight = 700;  // Nilai ketinggian air awal (cm)
+let isFlooding = true;  // Variabel untuk mengontrol arah simulasi banjir (naik/turun)
 
-  document.getElementById('ultrasonic').innerText = `${height} cm`;
-  document.getElementById('temperature').innerText = `${temp}°C`;
-  document.getElementById('humidity').innerText = `${hum}%`;
-  document.getElementById('soil').innerText = `${soil}%`;
-
-  const statusEl = document.getElementById('status');
-  if (height > 1000) {
-    statusEl.textContent = "BAHAYA";
-    statusEl.className = "status-bahaya text-center";
-    document.getElementById('alarmAudio').play().catch(()=>{});
-    alert("⚠️ Status Bahaya: Ketinggian air melebihi 1000 cm!");
-  } else if (height >= 800) {
-    statusEl.textContent = "WASPADA";
-    statusEl.className = "status-waspada text-center";
+function updateStatus(cm) {
+  if (cm > 1000) {
+    status.textContent = "🚨 BAHAYA";
+    status.className = "text-red-500 font-bold text-lg";
+    alarmAudio.play();
+    showPopup();
+  } else if (cm >= 800) {
+    status.textContent = "⚠️ WASPADA";
+    status.className = "text-yellow-400 font-bold text-lg";
   } else {
-    statusEl.textContent = "AMAN";
-    statusEl.className = "status-aman text-center";
+    status.textContent = "✅ AMAN";
+    status.className = "text-green-400 font-bold text-lg";
   }
-
-  chart.data.labels.push(`${chart.data.labels.length}m`);
-  chart.data.datasets[0].data.push(flow);
-  if (chart.data.labels.length > 60) {
-    chart.data.labels.shift();
-    chart.data.datasets[0].data.shift();
-  }
-  chart.update();
 }
 
-function loadForecast() {
-  const forecastEl = document.getElementById('forecast');
-  const dummy = [
-    { emoji: "☀️", day: "Senin", temp: 30, hum: 60 },
-    { emoji: "⛅", day: "Selasa", temp: 28, hum: 65 },
-    { emoji: "🌧️", day: "Rabu", temp: 26, hum: 70 },
-    { emoji: "⛈️", day: "Kamis", temp: 27, hum: 80 },
-    { emoji: "❄️", day: "Jumat", temp: 24, hum: 75 },
-  ];
-  forecastEl.innerHTML = dummy.map(item =>
-    `<div>${item.emoji} ${item.day} - ${item.temp}°C, ${item.hum}%</div>`
-  ).join("");
+function showPopup() {
+  dangerPopup.classList.remove('hidden');
 }
 
-setInterval(simulateData, 3000);
-loadForecast();
+function closePopup() {
+  dangerPopup.classList.add('hidden');
+}
+
+function updateChart() {
+  const now = new Date().toLocaleTimeString();  
+  const dummyFlow = Math.floor(Math.random() * 10 + 5); // Dummy data for flow (L/hour)
+  flowChart.data.labels.push(now);
+  flowChart.data.datasets[0].data.push(dummyFlow);
+  if (flowChart.data.labels.length > 12) { // 12 labels for 12 hours
+    flowChart.data.labels.shift();
+    flowChart.data.datasets[0].data.shift();
+  }
+  flowChart.update();
+}
+
+// Fungsi untuk mengambil data cuaca dari OpenWeather
+function fetchWeather() {
+  const apiKey = "9d3abcd072eda89b1f3136bfdc67af25";
+  const city = "Semarang";
+  const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric&lang=id`;
+
+  fetch(url)  
+    .then(res => res.json())
+    .then(data => {
+      const today = data.list[0];
+      const weather = today.weather[0];
+      const emoji = getWeatherEmoji(weather.main);
+      forecast.textContent = `${emoji} ${weather.description}`;
+
+      forecast5.innerHTML = "";
+      for (let i = 0; i < 5; i++) {
+        const day = data.list[i * 8]; // data every 3 hours
+        const icon = getWeatherEmoji(day.weather[0].main);
+        forecast5.innerHTML += `<li>${icon} ${day.dt_txt.split(" ")[0]} - ${day.weather[0].description}</li>`;
+      }
+    });
+}
+
+function getWeatherEmoji(main) {
+  switch (main) {
+    case "Clear": return "☀️";
+    case "Clouds": return "☁️";
+    case "Rain": return "🌧️";
+    case "Thunderstorm": return "⛈️";
+    case "Snow": return "❄️";
+    default: return "🌈";
+  }
+}
+
+// Fungsi untuk simulasi ketinggian air naik dengan cepat dan turun perlahan
+function updateSimulatedFlood() {
+  if (isFlooding) {
+    currentHeight += Math.random() * 15 + 5; // Naik cepat antara 5-20 cm per iterasi
+    if (currentHeight >= 1000) {
+      isFlooding = false; // Setelah mencapai 1000 cm, mulai menurunkan ketinggian
+    }
+  } else {
+    currentHeight -= Math.random() * 2 + 0.5; // Turun perlahan antara 0.5-2 cm per iterasi
+    if (currentHeight <= 700) {
+      isFlooding = true; // Setelah mencapai 700 cm, mulai menaikkan ketinggian
+    }
+  }
+
+  // Update nilai ketinggian air di UI
+  ultrasonic.textContent = `${Math.round(currentHeight)} cm`;
+  updateStatus(currentHeight); // Update status berdasarkan ketinggian air (Aman, Waspada, Bahaya)
+}
+
+function updateDummyData() {
+  temperature.textContent = `${Math.round(Math.random() * 30 + 25)}°C`;
+  humidity.textContent = `${Math.round(Math.random() * 50 + 30)}%`;
+  soil.textContent = `${Math.round(Math.random() * 30 + 40)}%`;
+
+  updateSimulatedFlood(); // Simulasikan banjir (ketinggian naik dan turun)
+  updateChart();
+}
+
+setInterval(() => {
+  updateDummyData();
+}, 5000); // Update data setiap 5 detik
+
+setInterval(fetchWeather, 1800000); // Update cuaca setiap 30 menit
+fetchWeather(); // Fetch cuaca awal saat halaman dimuat
