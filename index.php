@@ -40,31 +40,37 @@
     </div>
   </section>
 
-  <!-- Chart -->
-  <section class="p-4">
-    <div class="bg-gray-800 p-6 rounded-xl shadow">
-      <h2 class="text-xl font-semibold text-center mb-4">Debit Air (L/jam)</h2>
-      <div class="relative" style="height:300px;">
-        <canvas id="flowChart" class="w-full h-full"></canvas>
-      </div>
+<section class="p-4">
+  <div class="bg-gray-800 p-6 rounded-xl shadow">
+    <h2 class="text-xl font-semibold text-center mb-4">Chart Debit Air</h2>
+    <div class="relative" style="height:500px;">
+    <div class="mb-4 flex justify-center">
+      <select id="timeRange" class="bg-gray-600 p-2 rounded-xl text-white">
+        <option value="6">6 Jam</option>
+        <option value="12">12 Jam</option>
+        <option value="24">24 Jam</option>
+      </select>
     </div>
-  </section>
-
-  <!-- Bottom Info -->
-  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
-      <h2 class="text-xl font-semibold mb-2">Prediksi Cuaca</h2>
-      <p id="forecast" class="text-lg">Cerah Berawan</p>
-    </div>
-    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
-      <h2 class="text-xl font-semibold mb-2">Utilitas</h2>
-      <ul class="list-disc list-inside text-sm text-gray-300">
-        <li>Battery:</li>
-        <li>Connection:</li>
-        <li>Volt:</li>
-      </ul>
-    </div>
-  </section>
+    <!-- Chart -->
+    <canvas id="flowChart"></canvas>
+  </div>
+</section>
+  
+<!-- Bottom Info -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+  <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
+  <h3>Prakiraan 5 Hari:</h3>
+  <ul id="forecast-5days"></ul>
+  </div>
+  <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
+    <h2 class="text-xl font-semibold mb-2">Utilitas</h2>
+    <ul class="list-disc list-inside text-sm text-gray-300">
+      <li>Battery: <span id="battery">80%</span></li>
+      <li>Connection: <span id="connection">Offline</span></li>
+      <li>Volt: <span id="volt">5.00 V</span></li>
+    </ul>
+  </div>
+</section>
 
   <!-- Alarm Audio -->
   <audio id="alarmAudio" src="./assets/alarm.mp3" preload="auto"></audio>

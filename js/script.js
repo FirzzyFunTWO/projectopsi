@@ -8,30 +8,103 @@ const forecast5 = document.getElementById("forecast-5days");
 const alarmAudio = document.getElementById("alarmAudio");
 const dangerPopup = document.getElementById("dangerPopup");
 const ctx = document.getElementById("flowChart").getContext("2d");
+const timeRangeSelect = document.getElementById("timeRange");
+
+const battery = document.getElementById("battery");
+const connection = document.getElementById("connection");
+const volt = document.getElementById("volt");
 
 let flowChart = new Chart(ctx, {
   type: 'line',
   data: {
     labels: [],
-    datasets: [{
-      label: 'Debit Air (L/jam)',
-      data: [],
-      borderColor: 'rgba(59, 130, 246, 1)',
-      backgroundColor: 'rgba(59, 130, 246, 0.3)',
-      tension: 0.3
-    }]
+    datasets: [
+      {
+        label: 'Ketinggian Air (cm)',
+        data: [],
+        yAxisID: 'y1',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        tension: 0.3
+      },
+      {
+        label: 'Debit Air (L/jam)',
+        data: [],
+        yAxisID: 'y2',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        tension: 0.3
+      }
+    ]
   },
   options: {
     responsive: true,
     maintainAspectRatio: false,
-    scales: { y: { beginAtZero: true } }
+    interaction: {
+      mode: 'index',
+      intersect: false
+    },
+    stacked: false,
+    scales: {
+      x: {
+        display: true
+      },
+      y1: {
+        type: 'linear',
+        position: 'left',
+        title: {
+          display: true,
+          text: 'Ketinggian Air (cm)'
+        },
+        beginAtZero: true,
+        ticks: {
+          color: 'rgba(255, 99, 132, 1)'
+        }
+      },
+      y2: {
+        type: 'linear',
+        position: 'right',
+        title: {
+          display: true,
+          text: 'Debit Air (L/jam)'
+        },
+        beginAtZero: true,
+        grid: {
+          drawOnChartArea: false
+        },
+        ticks: {
+          color: 'rgba(54, 162, 235, 1)'
+        }
+      }
+    }
   }
 });
 
-// Variabel untuk ketinggian air
-let currentHeight = 700;  // Nilai ketinggian air awal (cm)
-let isFlooding = true;  // Variabel untuk mengontrol arah simulasi banjir (naik/turun)
+// Simpan semua data mentah di sini
+let fullData = [];
 
+// Fungsi untuk update chart sesuai range
+function updateChartByRange(rangeHours) {
+  const now = Date.now();
+  const rangeMs = rangeHours * 60 * 60 * 1000;
+
+  // Filter data sesuai time range
+  const filtered = fullData.filter(item => now - item.timestamp <= rangeMs);
+
+  flowChart.data.labels = filtered.map(d => d.label);
+  flowChart.data.datasets[0].data = filtered.map(d => d.ultrasonik);
+  flowChart.data.datasets[1].data = filtered.map(d => d.debit);
+  flowChart.update();
+}
+
+// Listener dropdown
+timeRangeSelect.addEventListener("change", (e) => {
+  const selected = parseInt(e.target.value);
+  updateChartByRange(selected);
+});
+
+
+// Update status flood
 function updateStatus(cm) {
   if (cm > 1000) {
     status.textContent = "🚨 BAHAYA";
@@ -55,25 +128,48 @@ function closePopup() {
   dangerPopup.classList.add('hidden');
 }
 
-function updateChart() {
-  const now = new Date().toLocaleTimeString();  
-  const dummyFlow = Math.floor(Math.random() * 10 + 5); // Dummy data for flow (L/hour)
-  flowChart.data.labels.push(now);
-  flowChart.data.datasets[0].data.push(dummyFlow);
-  if (flowChart.data.labels.length > 12) { // 12 labels for 12 hours
-    flowChart.data.labels.shift();
-    flowChart.data.datasets[0].data.shift();
-  }
-  flowChart.update();
+// Fetch sensor data
+function fetchSensorData() {
+  fetch("getdata.php")
+    .then(res => res.json())
+    .then(data => {
+      temperature.textContent = `${data.suhu}°C`;
+      humidity.textContent = `${data.kelembapan}%`;
+      soil.textContent = `${data.soil}%`;
+      ultrasonic.textContent = `${data.ultrasonik} cm`;
+
+      updateStatus(data.ultrasonik);
+
+      const timestamp = Date.now();
+      const label = new Date().toLocaleTimeString();
+      
+      // Simpan ke fullData
+      fullData.push({
+        timestamp,
+        label,
+        ultrasonik: data.ultrasonik,
+        debit: data.debit
+      });
+      
+      // Hapus data lama lebih dari 12 jam
+      const maxDuration = 12 * 60 * 60 * 1000;
+      fullData = fullData.filter(item => timestamp - item.timestamp <= maxDuration);
+      
+      // Render ulang sesuai dropdown
+      const selectedRange = parseInt(timeRangeSelect.value) || 3;
+      updateChartByRange(selectedRange);
+      
+    })
+    .catch(error => console.error("Gagal fetch sensor:", error));
 }
 
-// Fungsi untuk mengambil data cuaca dari OpenWeather
+// Fetch weather data
 function fetchWeather() {
   const apiKey = "9d3abcd072eda89b1f3136bfdc67af25";
   const city = "Semarang";
   const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric&lang=id`;
 
-  fetch(url)  
+  fetch(url)
     .then(res => res.json())
     .then(data => {
       const today = data.list[0];
@@ -83,11 +179,12 @@ function fetchWeather() {
 
       forecast5.innerHTML = "";
       for (let i = 0; i < 5; i++) {
-        const day = data.list[i * 8]; // data every 3 hours
+        const day = data.list[i * 8];
         const icon = getWeatherEmoji(day.weather[0].main);
         forecast5.innerHTML += `<li>${icon} ${day.dt_txt.split(" ")[0]} - ${day.weather[0].description}</li>`;
       }
-    });
+    })
+    .catch(error => console.error("Gagal fetch cuaca:", error));
 }
 
 function getWeatherEmoji(main) {
@@ -101,37 +198,46 @@ function getWeatherEmoji(main) {
   }
 }
 
-// Fungsi untuk simulasi ketinggian air naik dengan cepat dan turun perlahan
-function updateSimulatedFlood() {
-  if (isFlooding) {
-    currentHeight += Math.random() * 15 + 5; // Naik cepat antara 5-20 cm per iterasi
-    if (currentHeight >= 1000) {
-      isFlooding = false; // Setelah mencapai 1000 cm, mulai menurunkan ketinggian
-    }
-  } else {
-    currentHeight -= Math.random() * 2 + 0.5; // Turun perlahan antara 0.5-2 cm per iterasi
-    if (currentHeight <= 700) {
-      isFlooding = true; // Setelah mencapai 700 cm, mulai menaikkan ketinggian
-    }
-  }
-
-  // Update nilai ketinggian air di UI
-  ultrasonic.textContent = `${Math.round(currentHeight)} cm`;
-  updateStatus(currentHeight); // Update status berdasarkan ketinggian air (Aman, Waspada, Bahaya)
+// Fetch and update random volt and battery data
+function getRandomVolt() {
+  return (Math.random() * (5.5 - 4.5) + 4.5).toFixed(2);  // Random volt between 4.5V and 5.5V
 }
 
-function updateDummyData() {
-  temperature.textContent = `${Math.round(Math.random() * 30 + 25)}°C`;
-  humidity.textContent = `${Math.round(Math.random() * 50 + 30)}%`;
-  soil.textContent = `${Math.round(Math.random() * 30 + 40)}%`;
-
-  updateSimulatedFlood(); // Simulasikan banjir (ketinggian naik dan turun)
-  updateChart();
+function getRandomBattery() {
+  return Math.floor(Math.random() * (100 - 60) + 60);  // Random battery level between 60% and 100%
 }
 
+// Update battery and volt data
 setInterval(() => {
-  updateDummyData();
-}, 5000); // Update data setiap 5 detik
+  volt.textContent = `${getRandomVolt()} V`;
+  battery.textContent = `${getRandomBattery()}%`;
+}, 10000);  // Update every 10 seconds
 
-setInterval(fetchWeather, 1800000); // Update cuaca setiap 30 menit
-fetchWeather(); // Fetch cuaca awal saat halaman dimuat
+// Function to ping ESP and check connection status
+function pingESP() {
+  fetch("ping.php")  // Endpoint for pinging ESP32
+    .then(response => {
+      if (response.ok) {
+        connection.textContent = "Online - Signal: " + Math.floor(Math.random() * (-50 - -90) + -90) + " dBm"; // Random dBm between -50 to -90
+      } else {
+        connection.textContent = "Offline";
+      }
+    })
+    .catch(() => {
+      connection.textContent = "Offline";
+    });
+}
+
+// Ping ESP every 6 seconds
+setInterval(pingESP, 6000);
+
+// Initial fetch for connection status
+pingESP();
+
+// Run functions periodically
+setInterval(fetchSensorData, 5000);  // Update sensor every 5 seconds
+setInterval(fetchWeather, 1800000);  // Update weather every 30 minutes
+
+// Fetch on page load
+fetchSensorData();
+fetchWeather();
