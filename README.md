@@ -2,4 +2,4 @@
 
 Status on: Going
 **
-https://deep-gibbon-daily.ngrok-free.app/projectopsi/
+https://fragrances-federation-tank-cargo.trycloudflare.com/projectopsi/
