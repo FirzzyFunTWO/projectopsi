@@ -2,4 +2,4 @@
 
 Status on: Going
 **
-https://05905eca9d23.ngrok-free.app/projectopsi/
+https://deep-gibbon-daily.ngrok-free.app/projectopsi/
