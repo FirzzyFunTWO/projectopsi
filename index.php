@@ -4,73 +4,112 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>IoT Flood Monitoring Dashboard</title>
-  <link href="./css/style.css" rel="stylesheet">
-</head>
-<body class="bg-gray-900 text-white font-sans">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
 
-  <header class="text-center py-6 bg-gray-800 shadow-md">
-    <h1 class="text-3xl font-bold text-white">IoT Flood Monitoring Dashboard</h1>
+      document.querySelectorAll('.nav-tab').forEach(el => {
+        el.classList.remove('border-blue-500', 'text-blue-700');
+        el.classList.add('border-transparent', 'text-gray-500');
+      });
+
+      const activeTab = document.querySelector(`[data-tab="${tabId}"]`);
+      activeTab.classList.add('border-blue-500', 'text-blue-700');
+      activeTab.classList.remove('border-transparent', 'text-gray-500');
+    }
+    window.onload = () => switchTab('tab-dashboard');
+  </script>
+</head>
+<body class="bg-blue-100 text-gray-800 font-sans">
+
+  <!-- Navigation Tabs -->
+  <nav class="bg-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex justify-between h-16">
+        <div class="flex">
+          <div class="flex-shrink-0 flex items-center text-blue-600 font-bold text-xl">
+            Flood Monitor
+          </div>
+          <div class="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
+            <button data-tab="tab-dashboard" onclick="switchTab('tab-dashboard')" class="nav-tab inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium border-blue-500 text-blue-700 focus:outline-none">Dashboard</button>
+            <button data-tab="tab-log" onclick="switchTab('tab-log')" class="nav-tab inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-blue-300 hover:text-blue-600">Log & DB</button>
+            <button data-tab="tab-settings" onclick="switchTab('tab-settings')" class="nav-tab inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-blue-300 hover:text-blue-600">Settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <header class="text-center py-6 bg-blue-200 shadow-inner">
+    <h1 class="text-3xl font-bold text-blue-800">IoT EWS Flood Monitoring System</h1>
   </header>
 
-  <!-- Status Bar -->
-  <section class="p-4">
-    <div class="bg-gray-800 p-6 rounded-xl shadow">
-      <h2 class="text-xl font-semibold text-center">Status</h2>
-      <p id="status" class="text-3xl font-bold text-center">✅ AMAN</p>
-    </div>
-  </section>
+  <!-- Tab Dashboard -->
+  <div id="tab-dashboard" class="tab-content">
+    <!-- Status Block -->
+    <section class="p-4 flex flex-col items-center justify-center">
+      <div id="statusWrapper" class="border-4 border-green-400 bg-white px-10 py-6 rounded-xl shadow-xl text-center w-full max-w-lg">
+        <h2 class="text-xl font-semibold mb-2">Status</h2>
+        <p id="status" class="text-2xl font-bold text-green-500">✅ AMAN</p>
+      </div>
+    </section>
 
-  <!-- Top Info Row -->
-  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-4">
-    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
-      <h2 class="text-xl font-semibold mb-2">Ketinggian Air</h2>
-      <p id="ultrasonic" class="text-4xl font-bold text-blue-400">0 cm</p>
-    </div>
-    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
-      <h2 class="text-xl font-semibold mb-2">Suhu</h2>
-      <p id="temperature" class="text-4xl font-bold text-red-400">0°C</p>
-    </div>
-    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
-      <h2 class="text-xl font-semibold mb-2">Kelembapan</h2>
-      <p id="humidity" class="text-4xl font-bold text-green-400">0%</p>
-    </div>
-    <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
-      <h2 class="text-xl font-semibold mb-2">Kelembapan Tanah</h2>
-      <p id="soil" class="text-4xl font-bold text-yellow-400">0%</p>
-    </div>
-  </section>
+    <!-- Ketinggian Air Block -->
+    <section class="p-4 flex flex-col items-center justify-center">
+      <div class="bg-white p-6 rounded-xl shadow-xl border-4 border-blue-400 w-full max-w-lg text-center">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-2">Ketinggian Air</h2>
+        <p id="ultrasonic" class="text-5xl font-bold text-blue-500">0 cm</p>
+      </div>
+    </section>
 
-<section class="p-4">
-  <div class="bg-gray-800 p-6 rounded-xl shadow">
-    <h2 class="text-xl font-semibold text-center mb-4">Chart Debit Air</h2>
-    <div class="relative" style="height:500px;">
-    <div class="mb-4 flex justify-center">
-      <select id="timeRange" class="bg-gray-600 p-2 rounded-xl text-white">
-        <option value="6">6 Jam</option>
-        <option value="12">12 Jam</option>
-        <option value="24">24 Jam</option>
-      </select>
+    <!-- Grafik di Dashboard -->
+    <section class="p-4">
+      <div class="bg-white p-6 rounded-xl shadow-xl">
+        <div class="relative" style="height:400px;">
+          <canvas id="flowChart"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Tab Log & DB -->
+  <div id="tab-log" class="tab-content hidden p-4">
+    <div class="bg-white p-6 rounded-xl shadow-xl">
+      <div class="relative" style="height:500px;">
+        <canvas id="flowChart"></canvas>
+      </div>
     </div>
-    <!-- Chart -->
-    <canvas id="flowChart"></canvas>
+    <!-- Tempat untuk tabel data atau log lainnya -->
+    <div class="bg-white mt-6 p-4 rounded shadow text-center text-gray-600">
+      <p class="italic">📊 Database view under development...</p>
+    </div>
   </div>
-</section>
-  
-<!-- Bottom Info -->
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-  <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
-  <h3>Prakiraan 5 Hari:</h3>
-  <ul id="forecast-5days"></ul>
+
+  <!-- Tab Settings -->
+  <div id="tab-settings" class="tab-content hidden p-4 space-y-6">
+    <div class="bg-white p-6 rounded-xl shadow-xl max-w-lg mx-auto text-center">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">Device Status</h2>
+      <p id="connection" class="text-lg font-medium text-green-500">Checking connection...</p>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow-xl max-w-lg mx-auto">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4 text-center">Alarm Threshold Settings</h2>
+      <form id="thresholdForm" class="space-y-4">
+        <div>
+          <label for="threshold-warning" class="block font-medium text-gray-600">Waspada Threshold (cm)</label>
+          <input type="number" id="threshold-warning" class="w-full px-3 py-2 border rounded shadow focus:outline-none focus:ring" min="1" value="200"/>
+        </div>
+        <div>
+          <label for="threshold-danger" class="block font-medium text-gray-600">Bahaya Threshold (cm)</label>
+          <input type="number" id="threshold-danger" class="w-full px-3 py-2 border rounded shadow focus:outline-none focus:ring" min="1" value="400"/>
+        </div>
+        <div class="text-center">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700">Simpan Batas</button>
+        </div>
+      </form>
+    </div>
   </div>
-  <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
-    <h2 class="text-xl font-semibold mb-2">Utilitas</h2>
-    <ul class="list-disc list-inside text-sm text-gray-300">
-      <li>Battery: <span id="battery">80%</span></li>
-      <li>Connection: <span id="connection">Offline</span></li>
-      <li>Volt: <span id="volt">5.00 V</span></li>
-    </ul>
-  </div>
-</section>
 
   <!-- Alarm Audio -->
   <audio id="alarmAudio" src="./assets/alarm.mp3" preload="auto"></audio>
@@ -86,6 +125,5 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="./js/script.js"></script>
-
 </body>
 </html>

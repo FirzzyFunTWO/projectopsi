@@ -1,1 +1,3 @@
-{"suhu":29.3,"kelembapan":66.5,"soil":62.6,"ultrasonik":852,"debit":149}
+{
+  "ultrasonik": 500
+}
